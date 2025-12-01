@@ -23,7 +23,7 @@ export default function Sidebar() {
     >
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-          CryptoDash
+          Crypto Wallet
         </Typography>
       </Box>
 
@@ -42,6 +42,10 @@ export default function Sidebar() {
 
         <ListItemButton component="a" href="/ajustes">
           <ListItemText primary="Ajustes" />
+        </ListItemButton>
+
+        <ListItemButton component="a" href="/admin">
+          <ListItemText primary="Administración" />
         </ListItemButton>
       </List>
     </Drawer>

@@ -11,7 +11,7 @@ export default function Header() {
     >
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ fontWeight: "bold" }}>
-          CryptoDash
+          Crypto Wallet
         </Typography>
       </Toolbar>
     </AppBar>
