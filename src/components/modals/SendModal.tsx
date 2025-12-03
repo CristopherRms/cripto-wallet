@@ -165,13 +165,6 @@ export default function SendModal({ open, onClose, balances, onSuccess }: SendMo
               step: "0.00000001",
               min: "0",
             }}
-            endAdornment={
-              selectedBalance && (
-                <Typography variant="caption" sx={{ ml: 1 }}>
-                  {selectedBalance.symbol}
-                </Typography>
-              )
-            }
           />
 
           {/* Botón de max */}

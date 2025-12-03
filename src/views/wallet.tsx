@@ -56,33 +56,13 @@ export default function Wallet() {
     await fetchWalletData();
   };
 
-  const handleReceiveSuccess = () => {
-    setSuccessMessage("Modal de recepción cerrado");
-    setTimeout(() => setSuccessMessage(""), 3000);
-  };
-
   const getPrimaryBalance = () => {
     return balances.find((b) => b.symbol === "BTC") || balances[0];
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `Hace ${diffMins} minuto${diffMins > 1 ? "s" : ""}`;
-    if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? "s" : ""}`;
-    if (diffDays < 30) return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""}`;
-
-    return date.toLocaleDateString("es-ES");
-  };
-
   const calculateUsdValue = (transaction: Transaction) => {
     const sign = transaction.type === "receive" ? "+" : "-";
-    return `${sign}$${Math.abs(transaction.usd_value).toFixed(2)}`;
+    return `${sign}$${Math.abs(transaction.usd_value!).toFixed(2)}`;
   };
 
   const primaryBalance = getPrimaryBalance();
@@ -266,10 +246,10 @@ export default function Wallet() {
                   <Box sx={{ flexGrow: 1 }}>
                     <Typography fontWeight="600">
                       {t.type === "receive" ? "+" : "-"}
-                      {t.amount} {t.symbol}
+                      {t.amount}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {calculateUsdValue(t)} — {formatDate(t.created_at)}
+                      {calculateUsdValue(t)}
                     </Typography>
                   </Box>
 

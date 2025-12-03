@@ -8,7 +8,6 @@ import {
   Typography,
   Paper,
   IconButton,
-  CircularProgress,
 } from "@mui/material";
 import { useState } from "react";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";

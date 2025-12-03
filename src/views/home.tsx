@@ -2,7 +2,6 @@ import { Container, Typography, Paper, Box, CircularProgress, Alert } from "@mui
 import { useEffect, useState } from "react";
 import Header from "../components/layout/header";
 import Sidebar from "../components/layout/sidebar";
-import Card from "../components/card";
 import CryptoTable from "../components/cryptoTable";
 import { walletService, type Transaction } from "../services/walletService";
 
@@ -43,19 +42,6 @@ export default function Home() {
     if (diffDays < 30) return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""}`;
 
     return date.toLocaleDateString("es-ES");
-  };
-
-  const getUsdValue = (transaction: Transaction) => {
-    if (transaction.usd_value !== null) {
-      return `$${Math.abs(transaction.usd_value).toFixed(2)}`;
-    }
-    return "N/A";
-  };
-
-  const sampleData = {
-    price: "$45,876.12",
-    volume: "$3.2B",
-    change24h: "+2.3%",
   };
 
   return (

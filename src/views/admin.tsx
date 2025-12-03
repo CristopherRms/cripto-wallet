@@ -44,7 +44,7 @@ export default function AdminDashboard() {
 >
   <Tabs
     value={tab}
-    onChange={(e, v) => setTab(v)}
+    onChange={(_, v) => setTab(v)}
     TabIndicatorProps={{ style: { display: "none" } }} // Ocultar línea inferior
     sx={{ display: "flex" }}
   >
