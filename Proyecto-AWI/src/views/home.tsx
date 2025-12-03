@@ -33,28 +33,6 @@ export default function Home() {
           {/* Tabla */}
           <CryptoTable />
 
-          {/* Tarjetas principales */}
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 3,
-              mt: 4,
-            }}
-          >
-            <Box sx={{ flex: "1 1 250px" }}>
-              <Card title="Precio actual">{sampleData.price}</Card>
-            </Box>
-
-            <Box sx={{ flex: "1 1 250px" }}>
-              <Card title="Volumen (24h)">{sampleData.volume}</Card>
-            </Box>
-
-            <Box sx={{ flex: "1 1 250px" }}>
-              <Card title="Cambio (24h)">{sampleData.change24h}</Card>
-            </Box>
-          </Box>
-
           {/* Últimos movimientos */}
           <Typography
             variant="h5"
@@ -203,30 +181,6 @@ export default function Home() {
               </Typography>
             </Paper>
           </Box>
-
-          {/* Gráfico Placeholder */}
-          <Typography
-            variant="h5"
-            sx={{ color: "primary.main", fontWeight: 600, mt: 6, mb: 3 }}
-          >
-            Gráfico de Bitcoin
-          </Typography>
-
-          <Paper
-            sx={{
-              p: 4,
-              height: 300,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px dashed",
-              borderColor: "info.main",
-            }}
-          >
-            <Typography color="info.main">
-              Aquí irá el gráfico (sin lógica todavía)
-            </Typography>
-          </Paper>
         </Container>
       </Box>
     </Box>

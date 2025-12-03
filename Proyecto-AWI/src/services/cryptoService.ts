@@ -65,4 +65,58 @@ export const cryptoService = {
       throw new Error(`No se pudo obtener el precio actual de ${symbol}`);
     }
   },
+
+  async getMarketData(symbol: string): Promise<{
+    price: number;
+    change24h: number;
+    marketCap: string;
+  }> {
+    try {
+      // Obtener precio actual de Coinbase
+      const priceResponse = await fetch(`${COINBASE_API_URL}/prices/${symbol}-USD/buy`);
+
+      if (!priceResponse.ok) {
+        throw new Error(`Error al obtener precio de ${symbol}`);
+      }
+
+      const priceData: CoinbasePrice = await priceResponse.json();
+      const price = parseFloat(priceData.data.amount);
+
+      // Obtener datos de producto (incluye cambio 24h y volumen)
+      const productId = `${symbol}-USD`;
+      const productResponse = await fetch(
+        `https://api.exchange.coinbase.com/products/${productId}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      let change24h = 0;
+      let marketCap = 'N/A';
+
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        // Calcular el cambio 24h si está disponible
+        if (productData.open_24h && productData.last) {
+          change24h = ((productData.last - productData.open_24h) / productData.open_24h) * 100;
+        }
+      }
+
+      return {
+        price,
+        change24h: parseFloat(change24h.toFixed(2)),
+        marketCap,
+      };
+    } catch (err) {
+      console.error(`Error obteniendo datos de mercado para ${symbol}:`, err);
+      // Retornar valores por defecto en caso de error
+      return {
+        price: 0,
+        change24h: 0,
+        marketCap: 'N/A',
+      };
+    }
+  },
 };

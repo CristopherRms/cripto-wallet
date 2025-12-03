@@ -13,17 +13,19 @@ import Header from "../components/layout/header";
 import Sidebar from "../components/layout/sidebar";
 import { cryptoService, type Cryptocurrency } from "../services/cryptoService";
 import { purchaseService } from "../services/purchaseService";
+import { walletService, type Balance } from "../services/walletService";
 
 export default function BuyAndSell() {
   const [mode, setMode] = useState("buy"); // buy | sell
   const [cryptocurrencies, setCryptocurrencies] = useState<Cryptocurrency[]>([]);
+  const [balances, setBalances] = useState<Balance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState<number | null>(null);
   const [amountSpend, setAmountSpend] = useState("");
   const [amountReceive, setAmountReceive] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("credit_card");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadCryptocurrencies();
@@ -80,10 +82,14 @@ export default function BuyAndSell() {
   const loadCryptocurrencies = async () => {
     try {
       setLoading(true);
-      const data = await cryptoService.getCryptocurrencies();
-      setCryptocurrencies(data);
-      if (data.length > 0) {
-        setSelectedCrypto(data[0].id);
+      const [cryptoData, walletData] = await Promise.all([
+        cryptoService.getCryptocurrencies(),
+        walletService.getBalance(),
+      ]);
+      setCryptocurrencies(cryptoData);
+      setBalances(walletData.balances);
+      if (cryptoData.length > 0) {
+        setSelectedCrypto(cryptoData[0].id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar criptomonedas');
@@ -92,14 +98,14 @@ export default function BuyAndSell() {
     }
   };
 
-  const handlePurchase = async () => {
+  const handleTransaction = async () => {
     if (!selectedCrypto || !amountSpend) {
       setError('Por favor completa todos los campos');
       return;
     }
 
-    const usdAmount = parseFloat(amountSpend);
-    if (isNaN(usdAmount) || usdAmount <= 0) {
+    const amount = parseFloat(amountSpend);
+    if (isNaN(amount) || amount <= 0) {
       setError('Por favor ingresa una cantidad válida mayor a 0');
       return;
     }
@@ -110,35 +116,64 @@ export default function BuyAndSell() {
       return;
     }
 
+    // Validar saldo disponible en modo venta
+    if (mode === "sell") {
+      const cryptoBalance = balances.find((b) => b.cryptocurrency_id === selectedCrypto);
+      if (!cryptoBalance || cryptoBalance.available_balance < amount) {
+        setError(`No tienes saldo suficiente. Disponible: ${cryptoBalance?.available_balance || 0} ${selectedCryptoData.symbol}`);
+        return;
+      }
+    }
+
     try {
       setIsSubmitting(true);
       setError(null);
+      setSuccessMessage(null);
 
       // Obtener el precio actual de Coinbase
       const currentPrice = await cryptoService.getCurrentPrice(selectedCryptoData.symbol);
 
-      const cryptoAmount = mode === "buy"
-        ? usdAmount / currentPrice
-        : usdAmount * currentPrice;
+      if (mode === "buy") {
+        // Compra: el usuario gasta USD y recibe crypto
+        const cryptoAmount = amount / currentPrice;
 
-      if (cryptoAmount <= 0) {
-        setError('Error al calcular el monto de criptomoneda');
-        return;
+        if (cryptoAmount <= 0) {
+          setError('Error al calcular el monto de criptomoneda');
+          return;
+        }
+
+        await purchaseService.createPurchase({
+          cryptocurrency_id: selectedCrypto,
+          amount_crypto: cryptoAmount,
+          amount_usd: amount,
+          payment_method: "credit_card",
+        });
+
+        setSuccessMessage(`Compra realizada exitosamente. Recibiste ${cryptoAmount.toFixed(8)} ${selectedCryptoData.symbol}`);
+      } else {
+        // Venta: el usuario gasta crypto y recibe USD
+        const usdAmount = amount * currentPrice;
+
+        if (usdAmount <= 0) {
+          setError('Error al calcular el monto en USD');
+          return;
+        }
+
+        await purchaseService.sellCrypto({
+          cryptocurrency_id: selectedCrypto,
+          amount_crypto: amount,
+          price_usd: currentPrice,
+        });
+
+        setSuccessMessage(`Venta realizada exitosamente. Recibiste $${usdAmount.toFixed(2)} USD`);
       }
 
-      await purchaseService.createPurchase({
-        cryptocurrency_id: selectedCrypto,
-        amount_crypto: cryptoAmount,
-        amount_usd: usdAmount,
-        payment_method: paymentMethod,
-      });
-
-      setError(null);
       setAmountSpend("");
       setAmountReceive("");
-      alert('Compra realizada exitosamente');
+      // Recargar balances después de la transacción
+      await loadCryptocurrencies();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al procesar la compra');
+      setError(err instanceof Error ? err.message : `Error al procesar la ${mode === "buy" ? "compra" : "venta"}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -179,8 +214,9 @@ export default function BuyAndSell() {
             paddingTop: 15,
           }}
         >
-          {/* Mostrar errores */}
+          {/* Mostrar errores y éxito */}
           {error && <Alert severity="error">{error}</Alert>}
+          {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
           {/* Título */}
           <Typography variant="h3" sx={{ fontWeight: 700, color: "primary.main" }}>
@@ -241,14 +277,22 @@ export default function BuyAndSell() {
                 border: "1px solid #333",
               }}
             >
-              <Typography sx={{ color: "#888", mb: 1 }}>
-                {mode === "buy" ? "Gastas" : "Vendes"}
-              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                <Typography sx={{ color: "#888" }}>
+                  {mode === "buy" ? "Gastas" : "Vendes"}
+                </Typography>
+                {mode === "sell" && selectedCrypto && (
+                  <Typography sx={{ color: "#888", fontSize: "0.85rem" }}>
+                    Disponible: {balances.find((b) => b.cryptocurrency_id === selectedCrypto)?.available_balance || 0} {cryptocurrencies.find((c) => c.id === selectedCrypto)?.symbol || ""}
+                  </Typography>
+                )}
+              </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <TextField
                   fullWidth
                   variant="standard"
+                  type="number"
                   value={amountSpend}
                   onChange={(e) => setAmountSpend(e.target.value)}
                   placeholder={mode === "buy" ? "85,614.97" : "1"}
@@ -263,18 +307,46 @@ export default function BuyAndSell() {
                   }}
                 />
 
-                <Box
-                  sx={{
-                    color: "white",
-                    backgroundColor: "info.main",
-                    px: 2,
-                    py: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                  }}
-                >
-                  {mode === "buy" ? "USD" : "BTC"}
-                </Box>
+                {mode === "buy" ? (
+                  <Box
+                    sx={{
+                      color: "white",
+                      backgroundColor: "info.main",
+                      px: 2,
+                      py: 1,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                    }}
+                  >
+                    USD
+                  </Box>
+                ) : (
+                  <TextField
+                    select
+                    variant="standard"
+                    value={selectedCrypto || ""}
+                    onChange={(e) => setSelectedCrypto(Number(e.target.value))}
+                    slotProps={{
+                      input: {
+                        disableUnderline: true,
+                        sx: {
+                          color: "white",
+                          backgroundColor: "info.main",
+                          px: 2,
+                          py: 1,
+                          borderRadius: 2,
+                          fontWeight: 600,
+                        },
+                      },
+                    }}
+                  >
+                    {balances.map((balance) => (
+                      <MenuItem key={balance.cryptocurrency_id} value={balance.cryptocurrency_id}>
+                        {balance.symbol}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
               </Box>
             </Box>
 
@@ -288,13 +360,14 @@ export default function BuyAndSell() {
               }}
             >
               <Typography sx={{ color: "#888", mb: 1 }}>
-                {mode === "buy" ? "Recibes" : "Recibes"}
+                Recibes
               </Typography>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <TextField
                   fullWidth
                   variant="standard"
+                  type="number"
                   value={amountReceive}
                   disabled
                   placeholder={mode === "buy" ? "0.00000000" : "0.00"}
@@ -339,7 +412,7 @@ export default function BuyAndSell() {
                   <Box
                     sx={{
                       color: "white",
-                      backgroundColor: "primary.main",
+                      backgroundColor: "info.main",
                       px: 2,
                       py: 1,
                       borderRadius: 2,
@@ -356,7 +429,7 @@ export default function BuyAndSell() {
             <Button
               fullWidth
               variant="contained"
-              onClick={handlePurchase}
+              onClick={handleTransaction}
               disabled={isSubmitting}
               sx={{
                 mt: 2,
