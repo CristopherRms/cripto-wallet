@@ -106,13 +106,14 @@ export default function CryptoTable() {
     <TableContainer
       component={Paper}
       sx={{
-        backgroundColor: "warning.main",
+        backgroundColor: "background.default",
         backdropFilter: "blur(6px)",
         p: 2,
         borderRadius: 3,
+        border: "1px solid rgba(255, 255, 255, 0.1)",
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2, color: "error.main" }}>
+      <Typography variant="h6" sx={{ mb: 2, color: "primary.main" }}>
         Cryptocurrencies
       </Typography>
 

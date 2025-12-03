@@ -57,7 +57,7 @@ export default function Login() {
         authService.setUser(response.user);
       }
 
-      navigate("/home");
+      navigate("/");
     } catch (error: any) {
       setLoginError(error.message || "Error al iniciar sesión");
     } finally {
