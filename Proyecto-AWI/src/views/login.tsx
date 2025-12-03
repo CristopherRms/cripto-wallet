@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   Container,
   Paper,
@@ -6,14 +7,101 @@ import {
   Button,
   Box,
   Modal,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { authService } from "../services/authService";
+import type { LoginData, RegisterData } from "../services/authService";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [openModal, setOpenModal] = useState(false);
 
+  // Estado del login
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // Estado del registro
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState("");
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+  const [registerSuccess, setRegisterSuccess] = useState("");
+
   const handleOpenModal = () => setOpenModal(true);
-  const handleCloseModal = () => setOpenModal(false);
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setRegisterError("");
+    setRegisterSuccess("");
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoginLoading(true);
+
+    try {
+      const credentials: LoginData = {
+        email: loginEmail,
+        password: loginPassword,
+      };
+
+      const response = await authService.login(credentials);
+      authService.setToken(response.access_token);
+      if (response.user) {
+        authService.setUser(response.user);
+      }
+
+      navigate("/home");
+    } catch (error: any) {
+      setLoginError(error.message || "Error al iniciar sesión");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setRegisterError("");
+    setRegisterSuccess("");
+    setRegisterLoading(true);
+
+    if (registerPassword !== registerPasswordConfirm) {
+      setRegisterError("Las contraseñas no coinciden");
+      setRegisterLoading(false);
+      return;
+    }
+
+    try {
+      const data: RegisterData = {
+        name: registerName,
+        email: registerEmail,
+        password: registerPassword,
+        password_confirmation: registerPasswordConfirm,
+      };
+
+      const response = await authService.register(data);
+      authService.setToken(response.access_token);
+      if (response.user) {
+        authService.setUser(response.user);
+      }
+
+      setRegisterSuccess("Registro exitoso. Redirigiendo...");
+      setTimeout(() => {
+        handleCloseModal();
+        navigate("/home");
+      }, 1500);
+    } catch (error: any) {
+      setRegisterError(error.message || "Error en el registro");
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
 
   return (
     <Container
@@ -55,57 +143,79 @@ export default function Login() {
           Inicia sesión para continuar
         </Typography>
 
-        {/* Usuario */}
-        <TextField
-          fullWidth
-          label="Correo o usuario"
-          variant="outlined"
-          sx={{
-            mb: 3,
-            "& .MuiOutlinedInput-root": {
-              "& fieldset": { borderColor: "info.main" },
-              "&:hover fieldset": { borderColor: "primary.main" },
-            },
-          }}
-        />
+        {loginError && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {loginError}
+          </Alert>
+        )}
 
-        {/* Contraseña */}
-        <TextField
-          fullWidth
-          type="password"
-          label="Contraseña"
-          variant="outlined"
-          sx={{
-            mb: 4,
-            "& .MuiOutlinedInput-root": {
-              "& fieldset": { borderColor: "info.main" },
-              "&:hover fieldset": { borderColor: "primary.main" },
-            },
-          }}
-        />
+        <form onSubmit={handleLogin}>
+          {/* Usuario */}
+          <TextField
+            fullWidth
+            label="Correo"
+            type="email"
+            variant="outlined"
+            value={loginEmail}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLoginEmail(e.target.value)}
+            disabled={loginLoading}
+            required
+            sx={{
+              mb: 3,
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "info.main" },
+                "&:hover fieldset": { borderColor: "primary.main" },
+              },
+            }}
+          />
 
-        {/* Botón de login */}
-        <Button
-          fullWidth
-          variant="contained"
-          size="large"
-          sx={{
-            backgroundColor: "primary.main",
-            color: "white",
-            py: 1.5,
-            borderRadius: 2,
-            fontWeight: 600,
-            "&:hover": { backgroundColor: "#002237" },
-          }}
-        >
-          Iniciar Sesión
-        </Button>
+          {/* Contraseña */}
+          <TextField
+            fullWidth
+            type="password"
+            label="Contraseña"
+            variant="outlined"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            disabled={loginLoading}
+            required
+            sx={{
+              mb: 4,
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "info.main" },
+                "&:hover fieldset": { borderColor: "primary.main" },
+              },
+            }}
+          />
+
+          {/* Botón de login */}
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            type="submit"
+            disabled={loginLoading}
+            sx={{
+              backgroundColor: "primary.main",
+              color: "white",
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              "&:hover": { backgroundColor: "#002237" },
+            }}
+          >
+            {loginLoading ? <CircularProgress size={24} color="inherit" /> : "Iniciar Sesión"}
+          </Button>
+        </form>
 
         {/* Link inferior */}
         <Box textAlign="center" sx={{ mt: 3 }}>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
             ¿No tienes cuenta?{" "}
-            <span style={{ color: "#C1121F", cursor: "pointer" }} onClick={handleOpenModal}>
+            <span
+              style={{ color: "#C1121F", cursor: "pointer", fontWeight: 600 }}
+              onClick={handleOpenModal}
+            >
               Regístrate
             </span>
           </Typography>
@@ -143,96 +253,129 @@ export default function Login() {
             Crear Cuenta
           </Typography>
 
-          {/* Email */}
-          <TextField
-            fullWidth
-            label="Correo electrónico"
-            type="email"
-            variant="outlined"
-            sx={{
-              mb: 3,
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "info.main" },
-                "&:hover fieldset": { borderColor: "primary.main" },
-              },
-            }}
-          />
+          {registerError && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {registerError}
+            </Alert>
+          )}
 
-          {/* Usuario */}
-          <TextField
-            fullWidth
-            label="Usuario"
-            variant="outlined"
-            sx={{
-              mb: 3,
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "info.main" },
-                "&:hover fieldset": { borderColor: "primary.main" },
-              },
-            }}
-          />
+          {registerSuccess && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {registerSuccess}
+            </Alert>
+          )}
 
-          {/* Contraseña */}
-          <TextField
-            fullWidth
-            type="password"
-            label="Contraseña"
-            variant="outlined"
-            sx={{
-              mb: 3,
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "info.main" },
-                "&:hover fieldset": { borderColor: "primary.main" },
-              },
-            }}
-          />
-
-          {/* Confirmar Contraseña */}
-          <TextField
-            fullWidth
-            type="password"
-            label="Confirmar contraseña"
-            variant="outlined"
-            sx={{
-              mb: 4,
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "info.main" },
-                "&:hover fieldset": { borderColor: "primary.main" },
-              },
-            }}
-          />
-
-          {/* Botones */}
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
+          <form onSubmit={handleRegister}>
+            {/* Nombre */}
+            <TextField
               fullWidth
+              label="Nombre completo"
               variant="outlined"
-              onClick={handleCloseModal}
+              value={registerName}
+              onChange={(e) => setRegisterName(e.target.value)}
+              disabled={registerLoading}
+              required
               sx={{
-                borderColor: "primary.main",
-                color: "primary.main",
-                py: 1.2,
-                borderRadius: 2,
-                fontWeight: 600,
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "info.main" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                },
               }}
-            >
-              Cancelar
-            </Button>
-            <Button
+            />
+
+            {/* Email */}
+            <TextField
               fullWidth
-              variant="contained"
+              label="Correo electrónico"
+              type="email"
+              variant="outlined"
+              value={registerEmail}
+              onChange={(e) => setRegisterEmail(e.target.value)}
+              disabled={registerLoading}
+              required
               sx={{
-                backgroundColor: "primary.main",
-                color: "white",
-                py: 1.2,
-                borderRadius: 2,
-                fontWeight: 600,
-                "&:hover": { backgroundColor: "#002237" },
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "info.main" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                },
               }}
-            >
-              Registrarse
-            </Button>
-          </Box>
+            />
+
+            {/* Contraseña */}
+            <TextField
+              fullWidth
+              type="password"
+              label="Contraseña"
+              variant="outlined"
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+              disabled={registerLoading}
+              required
+              sx={{
+                mb: 3,
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "info.main" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                },
+              }}
+            />
+
+            {/* Confirmar Contraseña */}
+            <TextField
+              fullWidth
+              type="password"
+              label="Confirmar contraseña"
+              variant="outlined"
+              value={registerPasswordConfirm}
+              onChange={(e) => setRegisterPasswordConfirm(e.target.value)}
+              disabled={registerLoading}
+              required
+              sx={{
+                mb: 4,
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "info.main" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                },
+              }}
+            />
+
+            {/* Botones */}
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleCloseModal}
+                disabled={registerLoading}
+                sx={{
+                  borderColor: "primary.main",
+                  color: "primary.main",
+                  py: 1.2,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                fullWidth
+                variant="contained"
+                type="submit"
+                disabled={registerLoading}
+                sx={{
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  py: 1.2,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  "&:hover": { backgroundColor: "#002237" },
+                }}
+              >
+                {registerLoading ? <CircularProgress size={24} color="inherit" /> : "Registrarse"}
+              </Button>
+            </Box>
+          </form>
         </Paper>
       </Modal>
     </Container>
