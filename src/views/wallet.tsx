@@ -87,13 +87,13 @@ export default function Wallet() {
   }
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default " }}>
       <Sidebar />
 
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
         <Header />
 
-        <Container sx={{ py: 5 }}>
+        <Container sx={{ py: 5,  paddingTop:15 }}>
           {error && (
             <Box sx={{ mb: 3, p: 2, bgcolor: "error.light", borderRadius: 1 }}>
               <Typography color="error">{error}</Typography>
