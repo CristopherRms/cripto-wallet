@@ -57,7 +57,7 @@ export default function Login() {
         authService.setUser(response.user);
       }
 
-      navigate("/home");
+      navigate("/");
     } catch (error: any) {
       setLoginError(error.message || "Error al iniciar sesión");
     } finally {
@@ -94,7 +94,7 @@ export default function Login() {
       setRegisterSuccess("Registro exitoso. Redirigiendo...");
       setTimeout(() => {
         handleCloseModal();
-        navigate("/home");
+        navigate("/");
       }, 1500);
     } catch (error: any) {
       setRegisterError(error.message || "Error en el registro");
@@ -150,7 +150,7 @@ export default function Login() {
         )}
 
         <form onSubmit={handleLogin}>
-          {/* Usuario */}
+          
           <TextField
             fullWidth
             label="Correo"
@@ -169,7 +169,6 @@ export default function Login() {
             }}
           />
 
-          {/* Contraseña */}
           <TextField
             fullWidth
             type="password"
@@ -188,7 +187,6 @@ export default function Login() {
             }}
           />
 
-          {/* Botón de login */}
           <Button
             fullWidth
             variant="contained"
@@ -208,7 +206,6 @@ export default function Login() {
           </Button>
         </form>
 
-        {/* Link inferior */}
         <Box textAlign="center" sx={{ mt: 3 }}>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
             ¿No tienes cuenta?{" "}
@@ -222,7 +219,6 @@ export default function Login() {
         </Box>
       </Paper>
 
-      {/* Modal de Registro */}
       <Modal
         open={openModal}
         onClose={handleCloseModal}
