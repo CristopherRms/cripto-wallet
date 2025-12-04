@@ -45,7 +45,7 @@ export default function Home() {
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default " }}>
       {/* Sidebar */}
       <Sidebar />
 
@@ -53,7 +53,7 @@ export default function Home() {
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
         <Header />
 
-        <Container sx={{ py: 5 }}>
+        <Container sx={{ py: 5,  paddingTop:15}}>
           {/* Título */}
           <Typography
             variant="h4"
